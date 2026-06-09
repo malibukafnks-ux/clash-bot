@@ -1,0 +1,71 @@
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Python bytecode
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Virtual environments
+.venv/
+venv*/
+ENV/
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Distribution / packaging
+build/
+dist/
+*.egg-info/
+*.egg
+.eggs/
+sdist/
+wheels/
+.installed.cfg
+
+# Testing / coverage
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+coverage.xml
+nosetests.xml
+.hypothesis/
+.tox/
+
+# Linter / type checker caches
+.ruff_cache/
+.mypy_cache/
+.ty/
+
+# Docker
+compose.override.yaml
+docker-compose.override.yml
+.volumes/
+
+# Agent configs (CI наполняет через артефакт, локально — docker-compose volume mount)
+agent-configs/
+
+# Playwright CLI (локальные скриншоты / снапшоты)
+.playwright-cli/
+
+# Misc
+tmp/
+*.log
+logs/
+*.tmp
+*.temp
+.cache/
