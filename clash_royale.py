@@ -46,5 +46,5 @@ def get_random_card():
         return None
     card = random.choice(data["items"])
     text = _card_text(card)
-    icon_url = card.get("iconUrls", "???")
+    icon_url = (card.get("iconUrls") or {}).get("medium")
     return text, icon_url
