@@ -64,6 +64,7 @@ agent-configs/
 
 # Misc
 tmp/
+clash_bot.session
 *.log
 logs/
 *.tmp
