@@ -26,18 +26,25 @@ def _make_request(endpoint: str, params=None) -> dict | None:
 def get_player_info(tag):
     pass
 
+
+def _card_text(card):
+    name = card.get("name", "???")
+    elixir = card.get("elixirCost", "???")
+    rarity = card.get("rarity", "???")
+    max_level = card.get('maxLevel', "???")
+
+    return (
+        f'🃏 **{name}**\n'
+        f'💧 Эликсир: {elixir}\n'
+        f'⭐ Редкость: {rarity}\n'
+        f'⬆️ Макс. уровень: {max_level}'
+    )
+
 def get_random_card():
     data = _make_request("/cards")
     if data is None or 'items' not in data:
         return None
     card = random.choice(data["items"])
-    name = card.get("name", "???")
-    elixir = card.get("elixirCost", "???")
-    rarity = card.get("rarity", "???")
+    text = _card_text(card)
     icon_url = card.get("iconUrls", "???")
-    text = (
-        f'Карта: {name}\n'
-        f'Эликсир: {elixir}\n'
-        f'Редкость: {rarity}'
-    )
     return text, icon_url
