@@ -20,7 +20,6 @@ bot = Client(
 async def start_command(client: Client, message: Message):
     await message.reply(
         '👋 Привет! Вот что я умею:\n\n'
-        '🃏 /card — случайная карта (текст)\n'
         '🖼 /randomcard — случайная карта с картинкой\n'
         '🎴 /randomdeck — случайная колода из 8 карт\n'
         '🔍 /guess — угадай карту по пикселям!\n'
