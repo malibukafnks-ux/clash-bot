@@ -3,7 +3,7 @@ from pyrogram.types import Message
 import requests
 
 import config
-from clash_royale import get_random_card
+from clash_royale import get_random_card, get_player_info
 from kaomoji import get_random_kaomoji
 
 
@@ -44,6 +44,16 @@ async def randomcard_command(client: Client, message: Message):
     else:
         await message.reply(text)
 
+@bot.on_message(filters.command('player'))
+async def player_command(client: Client, message: Message):
+    if len(message.command) < 2:
+        await message.reply('Укажи тег игрока. Пример: /player #C0G20PR2')
+        return
+    player = get_player_info(message.command [1])
+    if player is None:
+        await message.reply('Игрок не найден. Проверь тег.')
+        return
+    await message.reply(player)
 
 if __name__ == "__main__":
     print('Bot started')

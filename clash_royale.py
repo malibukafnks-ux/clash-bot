@@ -24,7 +24,27 @@ def _make_request(endpoint: str, params=None) -> dict | None:
     return None
 
 def get_player_info(tag):
-    pass
+    tag = tag.replace('#', '%23')
+    data = _make_request(f"/players/{tag}")
+    if data is None:
+        return None
+
+    name = data.get("name", "???")
+    trophies = data.get("trophies", 0)
+    best_trophies = data.get("bestTrophies", 0)
+    wins = data.get("wins", 0)
+    losses = data.get("losses", 0)
+    clan_name = data.get("clan" , {}).get("name" , "без клана")
+    return (
+        f'Игрок: {name}\n'
+        f'Трофеи: {trophies} (рекорд: {best_trophies})\n'
+        f'Победы: {wins} | Поражения: {losses}\n'
+        f'Клан: {clan_name}'
+    )
+
+
+
+
 
 
 def _card_text(card):
