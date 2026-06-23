@@ -1,4 +1,8 @@
 import random
+import io
+from PIL import Image
+
+
 import requests
 import config
 
@@ -42,22 +46,93 @@ def get_player_info(tag):
         f'🛡️ Клан: {clan_name}'
     )
 
+
+
 def get_random_deck():
-    data = _make_request("/cards")
-    if data is None or 'items' not in data:
+    cards = _make_request("/cards")
+    if cards is None or 'items' not in cards:
         return None
-    deck = random.sample(data['items'], 8)
-    avg_elixir = sum(card.get('elixirCost', 0) for card in deck) / 8
+    deck = random.sample(cards, 8)
+    total_elixir = sum(c.get('elixirCost', 0) for c in deck)
+    avg_elixir = total_elixir / 8
 
-    lines = [f'Случайная колода. Средний эликсир: {avg_elixir:.1f}']
-    for index, card in enumerate(deck, 1):
-        name = card.get('name', '?')
-        elixir = card.get('elixirCost', '?')
-        lines.append(f'{index}. {name} — {elixir}')
+    lines = [f'🎴 **Случайная колода** (средний эликсир: {avg_elixir:.1f})\n']
+    for i, c in enumerate(deck, 1):
+        lines.append(f'{i}. {c.get("name", "?")} (💧{c.get("elixirCost", "?")})')
+    text = '\n'.join(lines)
 
-    return '\n'.join(lines)
+    images = []
+    for c in deck:
+        url = c.get('iconUrls', {}).get('medium', '')
+        if url:
+            img_bytes = _download_image(url)
+            if img_bytes:
+                images.append(img_bytes)
+
+    collage_bytes = None
+    if len(images) == 8:
+        collage_bytes = _make_collage(images)
+
+    return text, collage_bytes
 
 
+def _make_collage(images_bytes: list[bytes]) -> bytes | None:
+    """Собирает коллаж 4x2 из 8 карт."""
+    try:
+        imgs = [Image.open(io.BytesIO(b)).convert('RGBA') for b in images_bytes]
+        w, h = imgs[0].size
+        collage = Image.new('RGBA', (w * 4, h * 2), (0, 0, 0, 0))
+        for i, img in enumerate(imgs):
+            img = img.resize((w, h))
+            col, row = i % 4, i // 4
+            collage.paste(img, (col * w, row * h))
+
+        buf = io.BytesIO()
+        collage.save(buf, format='PNG')
+        return buf.getvalue()
+    except Exception:
+        return None
+
+def get_guess_card() -> tuple[str, bytes, bytes] | None:
+    """Карта для угадайки: (название, размытое фото, оригинал)."""
+    cards = _make_request("/cards")
+    if not cards:
+        return None
+
+    card = random.choice(cards)
+    name = card.get('name', '???')
+    icon_url = card.get('iconUrls', {}).get('medium', '')
+    if not icon_url:
+        return None
+
+    img_bytes = _download_image(icon_url)
+    if not img_bytes:
+        return None
+
+    try:
+        img = Image.open(io.BytesIO(img_bytes)).convert('RGBA')
+        pixelated = img.resize((32, 32), Image.NEAREST)
+        pixelated = pixelated.resize(img.size, Image.NEAREST)
+
+        buf_blur = io.BytesIO()
+        pixelated.save(buf_blur, format='PNG')
+
+        buf_orig = io.BytesIO()
+        img.save(buf_orig, format='PNG')
+
+        return name, buf_blur.getvalue(), buf_orig.getvalue()
+    except Exception:
+        return None
+
+
+def _download_image(url: str) -> bytes | None:
+    try:
+        resp = requests.get(url, timeout=10)
+        if resp.status_code == 200:
+            return resp.content
+    except requests.RequestException:
+        pass
+    return None
 
 
 

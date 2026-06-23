@@ -66,6 +66,14 @@ async def randomdeck_command(client: Client, message: Message):
         return
     await message.reply(data)
 
+@bot.on_message(filters.command('guess'))
+async def guess_command(client: Client, message: Message):
+    pass
+
+@bot.on_message(filters.command('giveup'))
+async def giveup_command(client: Client, message: Message):
+    pass
+
 
 if __name__ == "__main__":
     print('Bot started')
