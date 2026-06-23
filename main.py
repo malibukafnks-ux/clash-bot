@@ -3,7 +3,7 @@ from pyrogram.types import Message
 import requests
 
 import config
-from clash_royale import get_random_card, get_player_info
+from clash_royale import get_random_card, get_player_info, get_random_deck
 from kaomoji import get_random_kaomoji
 
 
@@ -19,10 +19,14 @@ bot = Client(
 @bot.on_message(filters.command('start'))
 async def start_command(client: Client, message: Message):
     await message.reply(
-        'Привет! Я Clash Royale + Kaomoji бот.\n\n'
-        '/kaomoji — случайная текстовая эмоция\n'
-        '/randomcard — случайная карта Clash Royale, добавим позже\n'
-        '/player <тег> — игрок Clash Royale, добавим позже'
+        '👋 Привет! Вот что я умею:\n\n'
+        '🃏 /card — случайная карта (текст)\n'
+        '🖼 /randomcard — случайная карта с картинкой\n'
+        '🎴 /randomdeck — случайная колода из 8 карт\n'
+        '🔍 /guess — угадай карту по пикселям!\n'
+        '👤 /player <тег> — информация об игроке CR\n'
+        '😜 /kaomoji — случайная ASCII-эмоция\n\n'
+        'Попробуй любую команду!'
     )
 
 
@@ -54,6 +58,15 @@ async def player_command(client: Client, message: Message):
         await message.reply('Игрок не найден. Проверь тег.')
         return
     await message.reply(player)
+
+@bot.on_message(filters.command('randomdeck'))
+async def randomdeck_command(client: Client, message: Message):
+    data = get_random_deck()
+    if data is None:
+        await message.reply('Не удалось получить колоду. Попробуй позже.')
+        return
+    await message.reply(data)
+
 
 if __name__ == "__main__":
     print('Bot started')

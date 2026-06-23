@@ -36,12 +36,26 @@ def get_player_info(tag):
     losses = data.get("losses", 0)
     clan_name = data.get("clan" , {}).get("name" , "без клана")
     return (
-        f'Игрок: {name}\n'
-        f'Трофеи: {trophies} (рекорд: {best_trophies})\n'
-        f'Победы: {wins} | Поражения: {losses}\n'
-        f'Клан: {clan_name}'
+        f'👤 **{name}**\n'
+        f'🏆 Трофеи: {trophies} (рекорд: {best_trophies})\n'
+        f'⚔️ Победы: {wins} | Поражения: {losses}\n'
+        f'🛡️ Клан: {clan_name}'
     )
 
+def get_random_deck():
+    data = _make_request("/cards")
+    if data is None or 'items' not in data:
+        return None
+    deck = random.sample(data['items'], 8)
+    avg_elixir = sum(card.get('elixirCost', 0) for card in deck) / 8
+
+    lines = [f'Случайная колода. Средний эликсир: {avg_elixir:.1f}']
+    for index, card in enumerate(deck, 1):
+        name = card.get('name', '?')
+        elixir = card.get('elixirCost', '?')
+        lines.append(f'{index}. {name} — {elixir}')
+
+    return '\n'.join(lines)
 
 
 
