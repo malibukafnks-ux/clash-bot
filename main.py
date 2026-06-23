@@ -1,10 +1,15 @@
+import io
+
 from pyrogram import Client, filters
 from pyrogram.types import Message
 import requests
 
 import config
-from clash_royale import get_random_card, get_player_info, get_random_deck
+from clash_royale import get_random_card, get_player_info, get_random_deck, get_guess_card
 from kaomoji import get_random_kaomoji
+
+
+guess_games: dict[int, tuple[str, bytes]] = {}
 
 
 bot = Client(
@@ -14,6 +19,12 @@ bot = Client(
     bot_token=config.BOT_TOKEN,
 
 )
+
+
+def _png_file(data: bytes, name: str) -> io.BytesIO:
+    file = io.BytesIO(data)
+    file.name = name
+    return file
 
 
 @bot.on_message(filters.command('start'))
@@ -47,6 +58,7 @@ async def randomcard_command(client: Client, message: Message):
     else:
         await message.reply(text)
 
+
 @bot.on_message(filters.command('player'))
 async def player_command(client: Client, message: Message):
     if len(message.command) < 2:
@@ -58,21 +70,74 @@ async def player_command(client: Client, message: Message):
         return
     await message.reply(player)
 
+
 @bot.on_message(filters.command('randomdeck'))
 async def randomdeck_command(client: Client, message: Message):
-    data = get_random_deck()
-    if data is None:
-        await message.reply('Не удалось получить колоду. Попробуй позже.')
+    result = get_random_deck()
+    if result is None:
+        await message.reply('Не удалось собрать колоду. Попробуй позже.')
         return
-    await message.reply(data)
+    text, collage_bytes = result
+    if collage_bytes:
+        await message.reply_photo(_png_file(collage_bytes, 'deck.png'), caption=text)
+    else:
+        await message.reply(text)
+
 
 @bot.on_message(filters.command('guess'))
 async def guess_command(client: Client, message: Message):
-    pass
+    result = get_guess_card()
+    if result is None:
+        await message.reply('Не удалось загрузить карту. Попробуй позже.')
+        return
+
+    name, blurred, original = result
+    guess_games[message.chat.id] = (name, original)
+
+    await message.reply_photo(
+        _png_file(blurred, 'guess.png'),
+        caption=(
+            '🔍 **Угадай карту!**\n'
+            'Напиши название карты (на английском).\n'
+            'Подсказка: /giveup — сдаться и увидеть ответ.'
+        ),
+    )
+
 
 @bot.on_message(filters.command('giveup'))
 async def giveup_command(client: Client, message: Message):
-    pass
+    game = guess_games.pop(message.chat.id, None)
+    if game is None:
+        await message.reply('Нет активной игры. Начни новую: /guess')
+        return
+
+    name, original = game
+    await message.reply_photo(
+        _png_file(original, 'card.png'),
+        caption=f'😅 Это была карта: **{name}**',
+    )
+
+
+@bot.on_message(filters.text)
+async def guess_answer_handler(client: Client, message: Message):
+    if not message.text or message.text.startswith('/'):
+        return
+
+    game = guess_games.get(message.chat.id)
+    if game is None:
+        return
+
+    name, original = game
+    user_answer = message.text.strip().lower()
+
+    if user_answer == name.lower():
+        guess_games.pop(message.chat.id, None)
+        await message.reply_photo(
+            _png_file(original, 'card.png'),
+            caption=f'🎉 Правильно! Это **{name}**!',
+        )
+    else:
+        await message.reply('❌ Неправильно, попробуй ещё! Или /giveup чтобы сдаться.')
 
 
 if __name__ == "__main__":

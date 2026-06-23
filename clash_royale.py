@@ -1,12 +1,15 @@
-import random
 import io
+import random
+import requests
+
+import config
+
 from PIL import Image
 
 
-import requests
-import config
-
 BASE_URL = 'https://proxy.royaleapi.dev/v1'
+_cards_cache: list[dict] | None = None
+
 
 def _make_request(endpoint: str, params=None) -> dict | None:
     headers = {
@@ -26,6 +29,20 @@ def _make_request(endpoint: str, params=None) -> dict | None:
     if response.status_code == 200:
         return response.json()
     return None
+
+
+def _get_all_cards() -> list[dict] | None:
+    global _cards_cache
+    if _cards_cache is not None:
+        return _cards_cache
+
+    data = _make_request('/cards')
+    if data is None or 'items' not in data:
+        return None
+
+    _cards_cache = data['items']
+    return _cards_cache
+
 
 def get_player_info(tag):
     tag = tag.replace('#', '%23')
@@ -47,10 +64,9 @@ def get_player_info(tag):
     )
 
 
-
 def get_random_deck():
-    cards = _make_request("/cards")
-    if cards is None or 'items' not in cards:
+    cards = _get_all_cards()
+    if not cards:
         return None
     deck = random.sample(cards, 8)
     total_elixir = sum(c.get('elixirCost', 0) for c in deck)
@@ -93,9 +109,10 @@ def _make_collage(images_bytes: list[bytes]) -> bytes | None:
     except Exception:
         return None
 
+
 def get_guess_card() -> tuple[str, bytes, bytes] | None:
     """Карта для угадайки: (название, размытое фото, оригинал)."""
-    cards = _make_request("/cards")
+    cards = _get_all_cards()
     if not cards:
         return None
 
@@ -135,7 +152,6 @@ def _download_image(url: str) -> bytes | None:
     return None
 
 
-
 def _card_text(card):
     name = card.get("name", "???")
     elixir = card.get("elixirCost", "???")
@@ -149,11 +165,12 @@ def _card_text(card):
         f'⬆️ Макс. уровень: {max_level}'
     )
 
+
 def get_random_card():
-    data = _make_request("/cards")
-    if data is None or 'items' not in data:
+    cards = _get_all_cards()
+    if not cards:
         return None
-    card = random.choice(data["items"])
+    card = random.choice(cards)
     text = _card_text(card)
     icon_url = (card.get("iconUrls") or {}).get("medium")
     return text, icon_url
